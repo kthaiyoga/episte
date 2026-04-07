@@ -456,7 +456,7 @@ function showResult(){
 
   const bi=BADGE_INFO[mode];
   const modeLabel=`<span style="font-size:11px;color:#aaa;">[${bi.label}]</span>`;
-  const resultText=`나의 인식론 유형: ${LABELS[top]} (${p.role})\n데카르트 ${scores.D}점 / 로크 ${scores.L}점 / 흄 ${scores.H}점 / 칸트 ${scores.K}점 (${bi.label}, ${total}문항)`;
+  window._resultText=`나의 인식론 유형: ${LABELS[top]} (${p.role})\n데카르트 ${scores.D}점 / 로크 ${scores.L}점 / 흄 ${scores.H}점 / 칸트 ${scores.K}점 (${bi.label}, ${total}문항)`;
 
   document.getElementById('res-card').innerHTML=`
     <div class="res-header">
@@ -480,14 +480,28 @@ function showResult(){
       ${statsHtml}
       <div class="sec-title" style="margin-top:1.25rem;">이 유형의 한계</div>
       <div class="limit-box">${p.limit}</div>
-      <button class="btn-share" onclick="shareResult('${resultText.replace(/'/g,"\\'")}')">&#128279; 결과 텍스트 복사하기</button>
+      <button class="btn-share" onclick="shareResult()">&#128279; 결과 텍스트 복사하기</button>
       <button class="btn-retry" onclick="retryQuiz()">&#8635; 다시 검사하기</button>
     </div>`;
 }
 
-function shareResult(text){
-  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>showToast('결과가 클립보드에 복사됐어요!'));}
-  else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast('결과가 클립보드에 복사됐어요!');}
+function shareResult(){
+  const text=window._resultText||'';
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(text).then(()=>showToast('결과가 클립보드에 복사됐어요!')).catch(()=>fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');
+  ta.value=text;
+  ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();ta.select();
+  try{document.execCommand('copy');showToast('결과가 클립보드에 복사됐어요!');}
+  catch(e){showToast('직접 선택해서 복사해주세요.');}
+  document.body.removeChild(ta);
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function retryQuiz(){cur=0;answers=[];mode=null;['ph','ev','bo'].forEach(id=>document.getElementById('mc-'+id).classList.remove('sel'));document.getElementById('btn-start').disabled=true;document.getElementById('btn-start').textContent='유형 선택 후 시작';document.getElementById('s-result').classList.remove('on');document.getElementById('s-start').classList.add('on');}
